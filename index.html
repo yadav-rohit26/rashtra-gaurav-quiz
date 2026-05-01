@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rashtra Gaurav Quiz Platform</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #ff9933 0%, #ffffff 50%, #138808 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #222;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.97);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    padding: 30px;
+    min-height: 80vh;
+  }
+  h1 {
+    text-align: center;
+    color: #c0392b;
+    font-size: 2.2em;
+    margin-bottom: 5px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #555;
+    margin-bottom: 25px;
+    font-style: italic;
+  }
+  .screen { display: none; animation: fade .35s ease; }
+  .screen.active { display: block; }
+  @keyframes fade { from { opacity:0; transform: translateY(8px);} to{opacity:1; transform:none;} }
+
+  input[type=text] {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 1.05em;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    transition: border .2s;
+  }
+  input[type=text]:focus { border-color: #ff9933; }
+
+  button {
+    background: linear-gradient(135deg, #ff9933, #c0392b);
+    color: #fff;
+    border: none;
+    padding: 12px 26px;
+    font-size: 1em;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 3px 10px rgba(192,57,43,0.3);
+  }
+  button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(192,57,43,0.4); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button.secondary { background: linear-gradient(135deg, #6c757d, #495057); box-shadow: 0 3px 10px rgba(0,0,0,0.2);}
+  button.success { background: linear-gradient(135deg, #138808, #0a5c04); box-shadow: 0 3px 10px rgba(19,136,8,0.3);}
+
+  .welcome-box { text-align: center; padding: 40px 20px; }
+  .welcome-box p { margin-bottom: 20px; color: #444; line-height: 1.6; }
+
+  .quiz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+    margin-top: 20px;
+  }
+  .quiz-card {
+    background: #fff;
+    border: 2px solid #eee;
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+  }
+  .quiz-card:hover { border-color: #ff9933; transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1);}
+  .quiz-card .num { font-size: 2em; font-weight: bold; color: #c0392b;}
+  .quiz-card .label { color: #555; margin-top: 5px; font-size: .95em;}
+  .quiz-card.completed { background: #e8f5e9; border-color: #138808; }
+  .quiz-card.completed::after {
+    content: '✓';
+    position: absolute;
+    top: 6px; right: 10px;
+    color: #138808;
+    font-size: 1.2em;
+    font-weight: bold;
+  }
+  .quiz-card .score-tag {
+    display: block;
+    font-size: .85em;
+    color: #138808;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  .quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .progress-bar {
+    height: 8px;
+    background: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 25px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff9933, #138808);
+    transition: width .3s;
+  }
+
+  .question-box {
+    background: #fafafa;
+    border-left: 5px solid #ff9933;
+    padding: 18px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 1.08em;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    background: #fff;
+    border: 2px solid #ddd;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .option:hover { border-color: #ff9933; background: #fff8f0;}
+  .option.selected { border-color: #c0392b; background: #fff0ed;}
+  .option.correct { border-color: #138808; background: #e8f5e9;}
+  .option.wrong { border-color: #c0392b; background: #ffebee;}
+  .option .letter {
+    min-width: 30px; height: 30px;
+    background: #f0f0f0;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold;
+  }
+  .option.selected .letter { background: #c0392b; color:#fff;}
+  .option.correct .letter { background: #138808; color:#fff;}
+  .option.wrong .letter { background: #c0392b; color:#fff;}
+
+  .nav-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+    gap: 10px;
+  }
+
+  .result-box { text-align: center; padding: 20px;}
+  .result-score {
+    font-size: 4em;
+    font-weight: bold;
+    background: linear-gradient(135deg, #ff9933, #138808);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 10px 0;
+  }
+  .result-message { font-size: 1.2em; color: #444; margin-bottom: 20px;}
+  .review-list { text-align: left; margin-top: 25px; }
+  .review-item {
+    background: #fafafa;
+    padding: 14px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid #ddd;
+  }
+  .review-item.correct { border-left-color: #138808;}
+  .review-item.wrong { border-left-color: #c0392b;}
+  .review-q { font-weight: 600; margin-bottom: 6px;}
+  .review-a { font-size: .92em; color: #555;}
+  .review-a .right { color: #138808; font-weight: 600;}
+  .review-a .picked { color: #c0392b; font-weight: 600;}
+
+  .user-info {
+    text-align: right;
+    color: #666;
+    font-size: .9em;
+    margin-bottom: 10px;
+  }
+  .user-info strong { color: #c0392b;}
+
+  .footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 18px 10px 8px;
+    color: #555;
+    font-size: 0.95em;
+    border-top: 1px dashed #ddd;
+    letter-spacing: 0.3px;
+  }
+  .footer .heart {
+    color: #e0245e;
+    display: inline-block;
+    animation: beat 1.2s infinite ease-in-out;
+  }
+  .footer .author {
+    background: linear-gradient(135deg, #ff9933, #c0392b, #138808);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+  }
+  @keyframes beat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+  }
+
+  @media (max-width: 600px) {
+    .container { padding: 18px; }
+    h1 { font-size: 1.6em; }
+    .quiz-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>राष्ट्र गौरव</h1>
+  <p class="subtitle">Rashtra Gaurav Quiz Platform - 10 Quizzes · 150 Questions</p>
+
+  <!-- Welcome / Name Input -->
+  <div id="screen-welcome" class="screen active">
+    <div class="welcome-box">
+      <p>Welcome! Test your knowledge of India's heritage, culture, philosophy, history and great personalities.</p>
+      <p>Please enter your name to begin:</p>
+      <input type="text" id="nameInput" placeholder="Enter your full name" maxlength="40" />
+      <br><br>
+      <button id="startBtn" onclick="startApp()">Start →</button>
+    </div>
+  </div>
+
+  <!-- Quiz Selection -->
+  <div id="screen-select" class="screen">
+    <div class="user-info">Player: <strong id="playerName"></strong> · Total Score: <strong id="totalScore">0 / 0</strong></div>
+    <h2 style="text-align:center; color:#138808;">Choose a Quiz</h2>
+    <p style="text-align:center; color:#666; margin-top:8px;">Each quiz has 15 unique questions.</p>
+    <div class="quiz-grid" id="quizGrid"></div>
+    <div style="text-align:center; margin-top:20px;">
+      <button class="secondary" onclick="resetAll()">Reset All Progress</button>
+    </div>
+  </div>
+
+  <!-- Quiz Taking -->
+  <div id="screen-quiz" class="screen">
+    <div class="quiz-header">
+      <h2 id="quizTitle" style="color:#c0392b;"></h2>
+      <span id="quizCounter" style="color:#555; font-weight:600;"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="question-box" id="questionText"></div>
+    <div class="options" id="optionsList"></div>
+    <div class="nav-buttons">
+      <button class="secondary" onclick="quitQuiz()">Quit</button>
+      <button id="nextBtn" onclick="nextQuestion()" disabled>Next →</button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="screen-result" class="screen">
+    <div class="result-box">
+      <h2 id="resultTitle"></h2>
+      <div class="result-score" id="resultScore"></div>
+      <div class="result-message" id="resultMessage"></div>
+      <div>
+        <button class="success" onclick="goToSelect()">Back to Quizzes</button>
+        <button onclick="toggleReview()">Show Review</button>
+      </div>
+      <div class="review-list" id="reviewList" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Made with <span class="heart">❤</span> By <span class="author">Rohit Yadav</span>
+  </div>
+</div>
+
+<script>
+// ============== ALL 150 QUESTIONS ==============
+// answer index: 0=A, 1=B, 2=C, 3=D
+const ALL_QUESTIONS = [
+  // ----- Set 1 (1-50) -----
+  {q:"Which feature exemplifies the diversity of India?",o:["A single language","Multiple ethnic groups","A unified religion","A single cuisine"],a:1},
+  {q:"The Indian Diaspora primarily refers to:",o:["People living in India","Indians living outside India","Indian tourists abroad","Indian immigrants only"],a:1},
+  {q:"Which ancient civilization is known for its planned cities?",o:["Indus Valley Civilization","Mesopotamian Civilization","Greek Civilization","Roman Civilization"],a:0},
+  {q:"Vedic culture is primarily associated with which texts?",o:["Puranas","Vedas","Upanishads","All of the above"],a:1},
+  {q:"Which of the following is a prominent festival in India that signifies cultural harmony?",o:["Christmas","Diwali","Thanksgiving","Halloween"],a:1},
+  {q:"Which geographical feature is a major component of India's diversity?",o:["Plains","Mountains","Deserts","All of the above"],a:3},
+  {q:"Which religion emphasizes the concept of non-violence (Ahimsa)?",o:["Hinduism","Jainism","Buddhism","All of the above"],a:3},
+  {q:"Shankaracharya is best known for his teachings in:",o:["Vaishnavism","Advaita Vedanta","Jain philosophy","Buddhism"],a:1},
+  {q:"Ramanuja is associated with which philosophical system?",o:["Advaita Vedanta","Vishishtadvaita","Dvaita","Sankhya"],a:1},
+  {q:"The six systems of Indian philosophy are known as:",o:["Shatdarshan","Sutras","Upanishads","Puranas"],a:0},
+  {q:"Who founded Jainism?",o:["Mahavira","Buddha","Shankaracharya","Ramanuja"],a:0},
+  {q:"The Bhakti movement in India emphasizes:",o:["Ritualistic practices","Personal devotion to God","Asceticism","Scholarly debates"],a:1},
+  {q:"Which Sufi saint is known for his teachings in India?",o:["Rumi","Nizamuddin Auliya","Al-Ghazali","Ibn Arabi"],a:1},
+  {q:"The Ramayana is attributed to which author?",o:["Kalidasa","Valmiki","Vyasa","Ban Bhatt"],a:1},
+  {q:"Who wrote the play \"Shakuntala\"?",o:["Ban Bhatt","Kalidasa","Bhasa","Harsha"],a:1},
+  {q:"Which ancient text is considered a treatise on statecraft?",o:["Arthashastra","Manusmriti","Upanishads","Vedas"],a:0},
+  {q:"Kalhan is known for which historical work?",o:["Kadambari","Rajatarangini","Akbarnama","Mahabharata"],a:1},
+  {q:"Which Tamil literature is known for its poetic beauty?",o:["Sangam literature","Puranas","Upanishads","Vedas"],a:0},
+  {q:"Abu Fazal is known for his work documenting the reign of which Mughal emperor?",o:["Akbar","Shah Jahan","Aurangzeb","Babur"],a:0},
+  {q:"Bharatendu Harishchandra is known for his contributions to which language?",o:["Sanskrit","Hindi","Tamil","Bengali"],a:1},
+  {q:"Aryabhata is known for his work in:",o:["Physics","Mathematics and Astronomy","Medicine","Chemistry"],a:1},
+  {q:"Which ancient Indian text discusses the calculation of eclipses?",o:["Siddhanta Shiromani","Arthashastra","Samudrika Shastra","Vimanika Shastra"],a:0},
+  {q:"Who calculated the value of pi (π) accurately in ancient India?",o:["Aryabhata","Brahmagupta","Bhaskara","Varahamihira"],a:0},
+  {q:"Brahmagupta made significant contributions to which field?",o:["Geometry","Algebra","Mathematics","All of the above"],a:3},
+  {q:"Varahamihira is known for his work in which area?",o:["Medicine","Astronomy","Astrology","All of the above"],a:3},
+  {q:"The Ashoka Pillars are significant because they:",o:["Represent Mughal architecture","Feature inscriptions promoting Buddhism","Are built of wood","Are located in South India"],a:1},
+  {q:"Which site is known for its rock-cut caves and sculptures?",o:["Konark","Sanchi","Ajanta and Ellora","Khajuraho"],a:2},
+  {q:"The Konark Sun Temple is dedicated to which deity?",o:["Shiva","Vishnu","Surya (Sun God)","Ganesha"],a:2},
+  {q:"Which architectural style is exemplified by the Khajuraho temples?",o:["Dravidian","Nagara","Indo-Islamic","Gothic"],a:1},
+  {q:"The Sanchi Stupa is primarily associated with:",o:["Jainism","Buddhism","Hinduism","Sikhism"],a:1},
+  {q:"Who was the first Indian Nobel laureate in Literature?",o:["Sarojini Naidu","Rabindranath Tagore","Bankim Chandra Chattopadhyay","Bhagat Singh"],a:1},
+  {q:"Sarojini Naidu was known for her contributions in which field?",o:["Politics","Poetry","Social reform","All of the above"],a:3},
+  {q:"Which freedom fighter is known for his revolutionary activities against British rule?",o:["Dadabhai Naoroji","Bhagat Singh","Mahatma Gandhi","Rabindranath Tagore"],a:1},
+  {q:"Dadabhai Naoroji is known for his work in:",o:["Literature","Economics","Nationalism","All of the above"],a:3},
+  {q:"Bankim Chandra Chattopadhyay is famous for writing which national song?",o:["Saare Jahan Se Achha","Vande Mataram","Jana Gana Mana","Aye Mere Watan Ke Logo"],a:1},
+  {q:"Durgabai Deshmukh was a prominent figure in:",o:["Education reform","Women's rights","Freedom struggle","All of the above"],a:3},
+  {q:"Sucheta Kriplani is noted for being:",o:["The first female governor of India","The first woman to become a Chief Minister","An eminent poet","A leading novelist"],a:1},
+  {q:"Which text discusses the philosophical ideas of Hinduism?",o:["Vedas","Puranas","Gita","All of the above"],a:3},
+  {q:"Which festival marks the victory of good over evil in Hindu culture?",o:["Eid","Diwali","Christmas","Pongal"],a:1},
+  {q:"The Vedic period is primarily known for its contributions to:",o:["Literature","Science","Philosophy","All of the above"],a:3},
+  {q:"The teachings of Jainism are primarily recorded in:",o:["Upanishads","Agamas","Vedas","Sutras"],a:1},
+  {q:"Which text is a fundamental part of Buddhism?",o:["Tripitaka","Mahabharata","Vedas","Sutras"],a:0},
+  {q:"Who is considered the father of Indian nationalism?",o:["Mahatma Gandhi","Dadabhai Naoroji","Rabindranath Tagore","Bhagat Singh"],a:1},
+  {q:"Which of the following is not a Bhakti saint?",o:["Kabir","Tulsidas","Ramanuja","Ashoka"],a:3},
+  {q:"Which Indian mathematician is known for his work on algebra?",o:["Aryabhata","Brahmagupta","Varahamihira","Bhaskara"],a:1},
+  {q:"Which of the following sites is a UNESCO World Heritage site?",o:["Qutub Minar","Taj Mahal","Ajanta Caves","All of the above"],a:3},
+  {q:"The Ajanta Caves are famous for their:",o:["Sculptures","Murals","Architecture","All of the above"],a:3},
+  {q:"Who wrote \"Anandamath\", which inspired the national song \"Vande Mataram\"?",o:["Rabindranath Tagore","Bankim Chandra Chattopadhyay","Sarojini Naidu","Bhagat Singh"],a:1},
+  {q:"Which saint is associated with the Nirguna tradition of Bhakti?",o:["Ramanuja","Kabir","Tulsidas","Chaitanya Mahaprabhu"],a:1},
+  {q:"The \"Mahabharata\" includes the Bhagavad Gita, which is a dialogue between:",o:["Krishna and Arjuna","Rama and Sita","Yudhishthira and Bhima","Draupadi and Karna"],a:0},
+
+  // ----- Set 2 (51-100) -----
+  {q:"Which of the following is the main reason for India's cultural diversity?",o:["Large population","Geographical variety","Influence of foreign invaders","Industrial development"],a:1},
+  {q:"The Indian diaspora refers to:",o:["The Indian population","Indians living abroad","Foreign-born residents in India","Regional populations within India"],a:1},
+  {q:"The Vedic culture was primarily based on:",o:["The Upanishads","The Vedas","The Ramayana","Jain texts"],a:1},
+  {q:"Which of the following is the primary feature of India's unity in diversity?",o:["Shared cultural practices","Same language","Religious tolerance","Single cultural heritage"],a:2},
+  {q:"Indus Valley Civilization was known for:",o:["Urban planning and drainage systems","Military strength","Nomadic lifestyle","Reliance on agriculture alone"],a:0},
+  {q:"Which philosophy is associated with the teachings of Shankaracharya?",o:["Advaita Vedanta","Vaishnavism","Sankhya Yoga","Buddhism"],a:0},
+  {q:"Jainism teaches the path to liberation through:",o:["Bhakti (devotion)","Knowledge (jnana)","Non-violence (ahimsa)","Meditation and asceticism"],a:2},
+  {q:"Which religious leader founded Buddhism?",o:["Mahavir","Buddha (Siddhartha Gautama)","Shankaracharya","Guru Nanak"],a:1},
+  {q:"Which concept is central to the philosophy of Vedanta?",o:["Karma","Moksha","The oneness of the self (Atman) and the ultimate reality (Brahman)","Reincarnation"],a:2},
+  {q:"Who among the following was a proponent of Vishishtadvaita (qualified non-dualism)?",o:["Ramanuja","Shankaracharya","Guru Nanak","Kabir"],a:0},
+  {q:"Which of the following is a characteristic of Nirgun Bhakti?",o:["Devotion to an idol of God","Worship of formless God","Emphasis on rituals","Meditation on nature"],a:1},
+  {q:"Sufism emphasizes the practice of:",o:["Meditation","Rituals","Mystical devotion to God","Material wealth"],a:2},
+  {q:"The Mahabharata was written by:",o:["Kalidas","Valmiki","Vyasa","Banabhatt"],a:2},
+  {q:"Who is the author of the epic Ramayana?",o:["Kalhan","Kalidas","Valmiki","Banabhatt"],a:2},
+  {q:"In which language is the Tamil epic \"Silappatikaram\" written?",o:["Sanskrit","Tamil","Pali","Prakrit"],a:1},
+  {q:"Who wrote the Sanskrit drama 'Shakuntala'?",o:["Bhavabhuti","Kalidas","Bhasa","Banabhatt"],a:1},
+  {q:"The work 'Rajatarangini' was written by:",o:["Kalhan","Banabhatt","Abu Fazal","Kautilya"],a:0},
+  {q:"Kautilya's 'Arthashastra' deals with:",o:["Literature","Science and mathematics","Statecraft, economics, and military strategy","Philosophy"],a:2},
+  {q:"Banabhatt was a renowned author and scholar from the court of which king?",o:["Chandragupta Maurya","Harsha Vardhana","Samudragupta","Ashoka"],a:1},
+  {q:"Who wrote 'Bharatendu Harishchandra' and was known for his contribution to Hindi literature?",o:["Rabindranath Tagore","Kavi Pradeep","Bharatendu Harishchandra","Surdas"],a:2},
+  {q:"Which of the following was an ancient Indian mathematician who is credited with the concept of zero?",o:["Aryabhata","Varahamihira","Brahmagupta","Bhaskara"],a:2},
+  {q:"Who was the first to propose that the Earth rotates on its axis?",o:["Aryabhata","Bhaskara","Brahmagupta","Varahamihira"],a:0},
+  {q:"Which Indian mathematician is known for his work on trigonometry and algebra?",o:["Aryabhata","Brahmagupta","Bhaskara II","Varahamihira"],a:2},
+  {q:"The 'Sushruta Samhita' is a famous text on:",o:["Mathematics","Astronomy","Surgery and medicine","Architecture"],a:2},
+  {q:"Who is regarded as the father of Indian astronomy?",o:["Aryabhata","Varahamihira","Brahmagupta","Bhaskara I"],a:0},
+  {q:"The Sanchi Stupa is associated with which religion?",o:["Jainism","Buddhism","Hinduism","Sikhism"],a:1},
+  {q:"The Konark Sun Temple is located in which state of India?",o:["Tamil Nadu","Odisha","Karnataka","Rajasthan"],a:1},
+  {q:"Which of the following is a famous example of rock-cut architecture in India?",o:["Ajanta Caves","Khajuraho Temples","Sanchi Stupa","Sun Temple"],a:0},
+  {q:"Which structure is famous for its erotic sculptures in India?",o:["Ajanta Caves","Khajuraho Temples","Sanchi Stupa","Konark Sun Temple"],a:1},
+  {q:"Which emperor's reign is associated with the construction of the Ashoka Pillars?",o:["Chandragupta Maurya","Ashoka the Great","Samudragupta","Harsha Vardhana"],a:1},
+  {q:"Which freedom fighter is known for his role in the Jallianwala Bagh massacre protest?",o:["Bhagat Singh","Rabindranath Tagore","Durgabai Deshmukh","Lala Lajpat Rai"],a:3},
+  {q:"Who is the author of India's national anthem?",o:["Bankim Chandra Chattopadhyay","Rabindranath Tagore","Kavi Pradeep","Subhas Chandra Bose"],a:1},
+  {q:"Who wrote the famous patriotic song 'Vande Mataram'?",o:["Sarojini Naidu","Bankim Chandra Chattopadhyay","Rabindranath Tagore","Subhas Chandra Bose"],a:1},
+  {q:"Which of the following women leaders was active in the Indian independence movement and was the first woman to become the president of the Indian National Congress?",o:["Sarojini Naidu","Sucheta Kriplani","Durgabai Deshmukh","Kasturba Gandhi"],a:0},
+  {q:"Which revolutionary freedom fighter is known for his famous statement, 'Inquilab Zindabad'?",o:["Bhagat Singh","Lala Lajpat Rai","Subhas Chandra Bose","Rajguru"],a:0},
+  {q:"The phrase \"Unity in Diversity\" was coined by:",o:["Jawaharlal Nehru","Mahatma Gandhi","Rabindranath Tagore","Sardar Patel"],a:0},
+  {q:"Who was the last king of the Maurya dynasty?",o:["Ashoka","Chandragupta Maurya","Bindusara","Brihadratha"],a:3},
+  {q:"Who among the following is considered the founder of the Gupta Empire?",o:["Chandragupta Maurya","Samudragupta","Vikramaditya","Chandragupta I"],a:3},
+  {q:"The famous 'Dandi March' was led by which leader?",o:["Mahatma Gandhi","Jawaharlal Nehru","Subhas Chandra Bose","Sardar Patel"],a:0},
+  {q:"Who was the first woman Prime Minister of India?",o:["Indira Gandhi","Sarojini Naidu","Rajkumari Amrit Kaur","Sucheta Kriplani"],a:0},
+  {q:"Which of the following best represents the idea of \"Unity in Diversity\" in India?",o:["Uniform religious practices across the nation","The celebration of various festivals by different communities","A single language spoken by all Indians","All regions having the same climate"],a:1},
+  {q:"Which of these best illustrates the geographical diversity of India?",o:["The presence of a single river system","The presence of varied climates from deserts to tropical forests","A common language across the nation","All regions having the same natural resources"],a:1},
+  {q:"Which of the following regions in India is known for its cultural harmony despite its ethnic diversity?",o:["Kashmir","Punjab","Kerala","All of the above"],a:3},
+  {q:"The ancient urban civilization of India is best represented by which archaeological site?",o:["Harappa","Khajuraho","Ajanta","Sanchi"],a:0},
+  {q:"Vedic culture is primarily associated with:",o:["Jainism","Buddhism","The Upanishads and the Vedas","The Mughal Empire"],a:2},
+  {q:"Who is considered the founder of Jainism?",o:["Buddha","Mahavira","Shankaracharya","Ramanuja"],a:1},
+  {q:"Which of the following is a core teaching of Buddhism?",o:["The Five Pillars of Islam","The Four Noble Truths","The Bhagavad Gita","The Ten Commandments"],a:1},
+  {q:"The system of philosophical inquiry known as 'Shatdarshan' refers to:",o:["Six systems of Hindu philosophy","Seven major Buddhist traditions","The Six Noble Virtues in Buddhism","The Eightfold Path"],a:0},
+  {q:"Who is the prominent philosopher associated with Advaita Vedanta?",o:["Ramanuja","Shankaracharya","Buddha","Swami Vivekananda"],a:1},
+  {q:"Which of the following is a major work associated with Vedanta philosophy?",o:["Bhagavad Gita","Rigveda","Upanishads","Dhammapada"],a:2},
+
+  // ----- Set 3 (101-150) -----
+  {q:"The phrase \"Unity in Diversity\" best describes:",o:["Economic growth","Cultural variety within national unity","Political division","Uniform language"],a:1},
+  {q:"The geographical diversity of India contributes to:",o:["Cultural monotony","Social uniformity","Cultural richness","Political instability"],a:2},
+  {q:"The term \"Indian Diaspora\" refers to:",o:["Foreigners living in India","Indians living abroad","Tourists visiting India","Refugees in India"],a:1},
+  {q:"Which aspect is central to India's unity?",o:["Religious intolerance","Linguistic conflict","Cultural harmony","Political division"],a:2},
+  {q:"The Indus Valley Civilization is known as:",o:["Vedic civilization","Ancient urban civilization","Medieval kingdom","Mauryan dynasty"],a:1},
+  {q:"Founder of Jainism:",o:["Gautama Buddha","Kapila","Mahavira","Shankaracharya"],a:2},
+  {q:"Founder of Buddhism:",o:["Mahavira","Buddha","Patanjali","Ashoka"],a:1},
+  {q:"'Shatdarshan' refers to:",o:["Six schools of Indian philosophy","Six types of art","Six forms of literature","Six Buddhist texts"],a:0},
+  {q:"Vedanta philosophy is based on the:",o:["Upanishads","Vedas","Ramayana","Arthashastra"],a:0},
+  {q:"Adi Shankaracharya preached the philosophy of:",o:["Dvaita","Advaita (non-dualism)","Vishishtadvaita","Buddhism"],a:1},
+  {q:"Ramanuja was associated with:",o:["Advaita","Dvaita","Vishishtadvaita","Charvaka"],a:2},
+  {q:"Nirgun Bhakti saints believed in:",o:["Idol worship","Formless God","Temple rituals","Caste hierarchy"],a:1},
+  {q:"Kabir and Nanak were:",o:["Sagun bhakti saints","Jain monks","Nirgun bhakti saints","Buddhist preachers"],a:2},
+  {q:"Sufi saints emphasized:",o:["Love and devotion to God","Materialism","Political power","Ascetic isolation"],a:0},
+  {q:"The Bhakti Movement started during:",o:["Vedic period","Medieval period","Modern period","British period"],a:1},
+  {q:"The author of Ramayana is:",o:["Vyasa","Tulsidas","Kalidasa","Valmiki"],a:3},
+  {q:"Mahabharata was written by:",o:["Kalidasa","Valmiki","Vyasa","Banabhatta"],a:2},
+  {q:"Silappadikaram is a work of:",o:["Sanskrit literature","Tamil literature","Pali literature","Prakrit literature"],a:1},
+  {q:"Kalidasa's famous play:",o:["Mrichhakatika","Kadambari","Mudrarakshasa","Abhijnanasakuntalam"],a:3},
+  {q:"Banabhatta wrote:",o:["Harshacharita","Rajatarangini","Arthashastra","Meghaduta"],a:0},
+  {q:"Aryabhata is famous for his work on:",o:["Medicine","Astronomy and Mathematics","Literature","Philosophy"],a:1},
+  {q:"The book Aryabhatiya was written by:",o:["Varahamihira","Brahmagupta","Aryabhata","Bhaskara"],a:2},
+  {q:"Aryabhata suggested that the Earth:",o:["Is flat","Is stationary","Rotates on its axis","Is the center of the universe"],a:2},
+  {q:"Varahamihira wrote:",o:["Panchasiddhantika","Aryabhatiya","Lilavati","Surya Siddhanta"],a:0},
+  {q:"Brahmagupta was the first to define:",o:["The concept of zero","The law of gravity","The decimal system","Planetary motion"],a:0},
+  {q:"Ancient Indian mathematicians made early contributions to:",o:["Geometry and trigonometry","Rocket science","Nuclear theory","Algebra only"],a:0},
+  {q:"The decimal system was developed in:",o:["China","Greece","India","Egypt"],a:2},
+  {q:"Which astronomer calculated the solar year precisely?",o:["Aryabhata","Ptolemy","Bhaskara","Al-Biruni"],a:0},
+  {q:"Varahamihira was associated with the court of:",o:["Ashoka","Harshavardhana","Chandragupta II (Vikramaditya)","Akbar"],a:2},
+  {q:"Brahmagupta's famous work is:",o:["Brihat Samhita","Brahmasphutasiddhanta","Rajatarangini","Lilavati"],a:1},
+  {q:"Ashoka Pillars are mainly made of:",o:["Iron","Marble","Granite","Sandstone"],a:3},
+  {q:"The emblem of India (Four Lions) is from:",o:["Sanchi Stupa","Sarnath Lion Capital","Ajanta Cave","Khajuraho Temple"],a:1},
+  {q:"Sanchi Stupa was built by:",o:["Ashoka","Harsha","Chandragupta Maurya","Kanishka"],a:0},
+  {q:"Ajanta Caves are famous for:",o:["Stone inscriptions","Buddhist paintings and sculptures","Jain temples","Islamic calligraphy"],a:1},
+  {q:"Ellora Caves represent:",o:["Hinduism","Buddhism","Jainism","All three religions"],a:3},
+  {q:"The Kailash Temple at Ellora was carved from:",o:["Marble","A single rock","Iron","Sandstone"],a:1},
+  {q:"Konark Sun Temple is located in:",o:["Odisha","Tamil Nadu","Karnataka","Rajasthan"],a:0},
+  {q:"Konark Temple was built by:",o:["Ashoka","Narasimhadeva I","Krishnadevaraya","Rajaraja Chola"],a:1},
+  {q:"The architectural style of Konark Temple resembles:",o:["A chariot of the Sun God","A lotus","A mountain","A wheel"],a:0},
+  {q:"Khajuraho temples were built by:",o:["Chandela rulers","Mauryas","Guptas","Rashtrakutas"],a:0},
+  {q:"Rabindranath Tagore was awarded the Nobel Prize for:",o:["Gora","Gitanjali","Sadhana","Nationalism"],a:1},
+  {q:"Tagore founded:",o:["Shantiniketan","Arya Samaj","Ramakrishna Mission","Aligarh Movement"],a:0},
+  {q:"The National Anthem of India was written by:",o:["Bankim Chandra","Tagore","Harivansh Rai Bachchan","Subramania Bharati"],a:1},
+  {q:"Bankim Chandra Chattopadhyay wrote:",o:["Vande Mataram","Jana Gana Mana","Sare Jahan Se Achha","Hind Swaraj"],a:0},
+  {q:"Sarojini Naidu was known as:",o:["Mother of the Nation","Iron Lady of India","Nightingale of India","First Indian pilot"],a:2},
+  {q:"Bankim Chandra's novel Anandamath inspired:",o:["The song \"Vande Mataram\"","The Indian Constitution","The National Flag","Gandhi's philosophy"],a:0},
+  {q:"Sarojini Naidu participated in:",o:["Civil Disobedience Movement","Non-Cooperation Movement","Both A and B","None"],a:2},
+  {q:"Bhagat Singh's famous slogan:",o:["\"Inquilab Zindabad\"","\"Jai Hind\"","\"Satyamev Jayate\"","\"Vande Mataram\""],a:0},
+  {q:"Dadabhai Naoroji was the first Indian MP in:",o:["Congress Party Office","Indian Parliament","United Nations","British Parliament"],a:3},
+  {q:"Durgabai Deshmukh is remembered for her work in:",o:["Social welfare and women's empowerment","Industrial development","Literature","Architecture"],a:0}
+];
+
+// ============== APP STATE ==============
+const QUIZ_COUNT = 10;
+const PER_QUIZ = 15;
+const QUIZZES = [];
+for (let i = 0; i < QUIZ_COUNT; i++) {
+  QUIZZES.push(ALL_QUESTIONS.slice(i*PER_QUIZ, (i+1)*PER_QUIZ));
+}
+
+const QUIZ_TITLES = [
+  "Quiz 1 · Foundations of India",
+  "Quiz 2 · Philosophy & Religion",
+  "Quiz 3 · Bhakti & Literature",
+  "Quiz 4 · Science & Heritage",
+  "Quiz 5 · Freedom & Festivals",
+  "Quiz 6 · Diversity & Beliefs",
+  "Quiz 7 · Sages & Scholars",
+  "Quiz 8 · Mathematics & Monuments",
+  "Quiz 9 · Patriots & Pioneers",
+  "Quiz 10 · Glorious Bharat"
+];
+
+let userName = "";
+let currentQuiz = -1;
+let currentQ = 0;
+let selectedOption = -1;
+let answers = []; // current run answers
+let progress = []; // per-quiz: {completed:bool, score:N, answers:[]}
+
+function loadProgress(){
+  try {
+    const saved = localStorage.getItem('rashtra_gaurav_progress');
+    if (saved) {
+      const obj = JSON.parse(saved);
+      userName = obj.userName || "";
+      progress = obj.progress || [];
+    }
+  } catch(e){}
+  while (progress.length < QUIZ_COUNT) progress.push({completed:false, score:0, answers:[]});
+}
+function saveProgress(){
+  localStorage.setItem('rashtra_gaurav_progress', JSON.stringify({userName, progress}));
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startApp(){
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) { alert("Please enter your name to begin."); return; }
+  userName = name;
+  saveProgress();
+  goToSelect();
+}
+
+function goToSelect(){
+  document.getElementById('playerName').textContent = userName;
+  updateTotalScore();
+  renderQuizGrid();
+  showScreen('screen-select');
+}
+
+function updateTotalScore(){
+  let total = 0, max = 0;
+  progress.forEach(p => {
+    if (p.completed){ total += p.score; max += PER_QUIZ; }
+  });
+  document.getElementById('totalScore').textContent = `${total} / ${max}`;
+}
+
+function renderQuizGrid(){
+  const grid = document.getElementById('quizGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < QUIZ_COUNT; i++){
+    const p = progress[i];
+    const card = document.createElement('div');
+    card.className = 'quiz-card' + (p.completed ? ' completed' : '');
+    card.onclick = () => startQuiz(i);
+    card.innerHTML = `
+      <div class="num">${i+1}</div>
+      <div class="label">${QUIZ_TITLES[i].split('·')[1].trim()}</div>
+      ${p.completed ? `<span class="score-tag">${p.score}/${PER_QUIZ}</span>` : ''}
+    `;
+    grid.appendChild(card);
+  }
+}
+
+function startQuiz(idx){
+  currentQuiz = idx;
+  currentQ = 0;
+  selectedOption = -1;
+  answers = new Array(PER_QUIZ).fill(-1);
+  document.getElementById('quizTitle').textContent = QUIZ_TITLES[idx];
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const quiz = QUIZZES[currentQuiz];
+  const q = quiz[currentQ];
+  document.getElementById('quizCounter').textContent = `Question ${currentQ+1} of ${PER_QUIZ}`;
+  document.getElementById('progressFill').style.width = `${((currentQ)/PER_QUIZ)*100}%`;
+  document.getElementById('questionText').textContent = `Q${currentQ+1}. ${q.q}`;
+  const optList = document.getElementById('optionsList');
+  optList.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.o.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.onclick = () => selectOption(i);
+    div.innerHTML = `<span class="letter">${letters[i]}</span><span>${opt}</span>`;
+    optList.appendChild(div);
+  });
+  selectedOption = answers[currentQ];
+  if (selectedOption >= 0) {
+    optList.children[selectedOption].classList.add('selected');
+  }
+  document.getElementById('nextBtn').disabled = selectedOption < 0;
+  document.getElementById('nextBtn').textContent = (currentQ === PER_QUIZ - 1) ? 'Submit ✓' : 'Next →';
+}
+
+function selectOption(i){
+  selectedOption = i;
+  answers[currentQ] = i;
+  const opts = document.getElementById('optionsList').children;
+  for (let k = 0; k < opts.length; k++) opts[k].classList.remove('selected');
+  opts[i].classList.add('selected');
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function nextQuestion(){
+  if (selectedOption < 0) return;
+  if (currentQ < PER_QUIZ - 1){
+    currentQ++;
+    selectedOption = -1;
+    renderQuestion();
+  } else {
+    finishQuiz();
+  }
+}
+
+function quitQuiz(){
+  if (confirm("Are you sure you want to quit? Your progress in this quiz will be lost.")) {
+    goToSelect();
+  }
+}
+
+function finishQuiz(){
+  const quiz = QUIZZES[currentQuiz];
+  let score = 0;
+  for (let i = 0; i < PER_QUIZ; i++){
+    if (answers[i] === quiz[i].a) score++;
+  }
+  progress[currentQuiz] = { completed: true, score: score, answers: [...answers] };
+  saveProgress();
+  showResult(score);
+}
+
+function showResult(score){
+  document.getElementById('resultTitle').textContent = `${QUIZ_TITLES[currentQuiz]} - Result`;
+  document.getElementById('resultScore').textContent = `${score} / ${PER_QUIZ}`;
+  const pct = (score / PER_QUIZ) * 100;
+  let msg;
+  if (pct === 100) msg = `Outstanding, ${userName}! A perfect score! 🇮🇳`;
+  else if (pct >= 80) msg = `Excellent work, ${userName}!`;
+  else if (pct >= 60) msg = `Good job, ${userName}. Keep going!`;
+  else if (pct >= 40) msg = `Not bad, ${userName}. Review and try again!`;
+  else msg = `Don't worry, ${userName}. Practice makes perfect!`;
+  document.getElementById('resultMessage').textContent = msg;
+  document.getElementById('reviewList').style.display = 'none';
+  buildReview();
+  showScreen('screen-result');
+}
+
+function buildReview(){
+  const list = document.getElementById('reviewList');
+  list.innerHTML = '';
+  const quiz = QUIZZES[currentQuiz];
+  const letters = ['A','B','C','D'];
+  for (let i = 0; i < PER_QUIZ; i++){
+    const q = quiz[i];
+    const picked = answers[i];
+    const isCorrect = picked === q.a;
+    const item = document.createElement('div');
+    item.className = 'review-item ' + (isCorrect ? 'correct' : 'wrong');
+    item.innerHTML = `
+      <div class="review-q">Q${i+1}. ${q.q}</div>
+      <div class="review-a">
+        Your answer: <span class="${isCorrect ? 'right' : 'picked'}">${picked >= 0 ? letters[picked] + ') ' + q.o[picked] : 'Not answered'}</span><br>
+        ${!isCorrect ? `Correct answer: <span class="right">${letters[q.a]}) ${q.o[q.a]}</span>` : '✓ Correct'}
+      </div>
+    `;
+    list.appendChild(item);
+  }
+}
+
+function toggleReview(){
+  const list = document.getElementById('reviewList');
+  list.style.display = (list.style.display === 'none') ? 'block' : 'none';
+}
+
+function resetAll(){
+  if (!confirm("This will erase all your scores and start over. Continue?")) return;
+  localStorage.removeItem('rashtra_gaurav_progress');
+  userName = "";
+  progress = [];
+  loadProgress();
+  document.getElementById('nameInput').value = '';
+  showScreen('screen-welcome');
+}
+
+// init
+loadProgress();
+if (userName) {
+  document.getElementById('nameInput').value = userName;
+  goToSelect();
+}
+document.getElementById('nameInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') startApp();
+});
+</script>
+</body>
+</html>
